@@ -23,12 +23,12 @@ import bcrypt
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from itsdangerous import URLSafeTimedSerializer
-from lobby import Lobby
 from game_session import GameSession
 
 import sys
 sys.path.append('../')
 import shared.messages as messages
+from shared.lobby import Lobby
 
 # Define server constants
 VERSION = "v0.0.1"
@@ -160,7 +160,7 @@ def handle_register(sock, message_dict):
         email=message_dict['email'],
         password=message_dict['password']
     )
-    logging.info(f"Received REGISTER message:")
+    logging.info("Received REGISTER message:")
     logging.info(f"    Username: {register_msg.username}")
     logging.info(f"    Email: {register_msg.email}")
     logging.info(f"    Password Hash: {register_msg.password}")
@@ -175,7 +175,7 @@ def handle_register(sock, message_dict):
         logging.error(error_message)
         # Send error message to client (you may need to modify this line based on your implementation)
         sock.send(error_message.encode('utf-8'))
-        return False
+        
     else:
         # If username/email does not exist, add to database
         database.add_user(register_msg.username, register_msg.email, register_msg.password, False)
@@ -184,7 +184,8 @@ def handle_register(sock, message_dict):
         if AUTH_EMAILS_ENABLED:
             send_authorization_email(register_msg.email)
         # Return false, user is not logged in
-        return False
+        
+    return False
 
 def handle_login(sock, message_dict):
     """
@@ -432,7 +433,8 @@ def client_handler(sock, username):
                 )
                 server_sock_utils.send_message(sock, lobby_failed_msg)
             else:
-                gamelobby = Lobby(owner=owner, lobby_name=lobby_name, game_type=game_type, max_players=max_players, lobby_password=lobby_password)
+                # lobby_id = None, will be set during object class initialization
+                gamelobby = Lobby(lobby_id = None, owner=owner, lobby_name=lobby_name, game_type=game_type, max_players=max_players, lobby_password=lobby_password)
                 lobby_created_msg = messages.LobbyCreatedMessage(
                     lobby_id=gamelobby.lobby_id,
                     owner=gamelobby.owner,

@@ -1,16 +1,17 @@
 import uuid
-from game_session import GameSession
 
 class Lobby:
-    def __init__(self, owner, lobby_name, game_type, max_players, lobby_password=None):
-        self.lobby_id = str(uuid.uuid4())
+    def __init__(self, lobby_id, owner, lobby_name, game_type, max_players, lobby_password=None):
+        if lobby_id is not None:
+            self.lobby_id = lobby_id
+        else:
+            self.lobby_id = str(uuid.uuid4())
         self.owner = owner
         self.lobby_name = lobby_name
         self.game_type = game_type
         self.max_players = max_players
         self.lobby_password = lobby_password
         self.players = []
-        self.game_session = None
 
     def get_name(self):
         return self.lobby_name
@@ -34,12 +35,4 @@ class Lobby:
         return len(self.players) >= self.max_players
 
     def start_game(self):
-        if self.game_session is None:
-            # Create a game instance of the specified game type
-            game_instance = self.game_type(self.players)
-
-            # Create a GameSession instance with the game instance
-            self.game_session = GameSession(self.players, game_instance)
-            self.game_session.start()
-        else:
-            print("Game is already in progress.")
+        pass

@@ -3,6 +3,29 @@
 
 
 
+Sunday ToDo list
+
+implement lobbies
+implement helicopter or something simple for one player
+Use basegame class
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
