@@ -101,9 +101,11 @@ class LobbyFailedMessage:
 
 # LobbyCreatedMessage is sent by the server to the client
 class LobbyCreatedMessage:
-    def __init__(self, lobby_id, owner, lobby_name, game_type, max_players, lobby_password=None):
+    def __init__(self, lobby_id, owner, players, groups, lobby_name, game_type, max_players, lobby_password=None):
         self.type = "LOBBY_CREATED"
         self.lobby_id = lobby_id
+        self.players = players
+        self.groups = groups
         self.owner = owner
         self.lobby_name = lobby_name
         self.game_type = game_type
@@ -124,15 +126,17 @@ class LeaveLobbyMessage:
         self.username = username
 
 class LobbyUpdateMessage:
-    def __init__(self, lobby_id, players, owner, lobby_name, game_type, max_players, lobby_password=None):
+    def __init__(self, lobby_id, players, groups, owner, lobby_name, game_type, max_players, lobby_password=None):
         self.type = "LOBBY_UPDATE"
         self.lobby_id = lobby_id
         self.players = players
+        self.groups = groups
         self.owner = owner
         self.lobby_name = lobby_name
         self.game_type = game_type
         self.max_players = max_players
         self.lobby_password = lobby_password
+
 
 class RequestLobbyListMessage:
     def __init__(self):

@@ -435,18 +435,21 @@ def client_handler(sock, username):
             else:
                 # lobby_id = None, will be set during object class initialization
                 gamelobby = Lobby(lobby_id = None, owner=owner, lobby_name=lobby_name, game_type=game_type, max_players=max_players, lobby_password=lobby_password)
+                gamelobby.add_player(owner)
+                lobbies.append(gamelobby)
                 lobby_created_msg = messages.LobbyCreatedMessage(
                     lobby_id=gamelobby.lobby_id,
                     owner=gamelobby.owner,
                     lobby_name=gamelobby.lobby_name,
                     game_type=gamelobby.game_type,
                     max_players=gamelobby.max_players,
-                    lobby_password=gamelobby.lobby_password
+                    lobby_password=gamelobby.lobby_password,
+                    groups=gamelobby.groups,
+                    players=gamelobby.players
                 )
                 for _, other_client in clients.items():
                     server_sock_utils.send_message(other_client['sock'], lobby_created_msg)
-                
-                lobbies.append(gamelobby)
+                    
                 logging.info(f"Created lobby {lobby_name} with owner {owner}.")
 
 

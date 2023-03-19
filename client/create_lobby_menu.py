@@ -158,7 +158,10 @@ def run(screen, client_socket, username):
                 if message['owner'] == username:
                     screen.blit(font.render("Lobby created!", True, FONT_COLOR), (10, 10))
                     # create a lobby menu object
+                    # the server also has its own Lobby object, updates are transmitted to the client... may need to change this
                     new_lobby = Lobby(lobby_id = message['lobby_id'], owner = message['owner'], lobby_name = message['lobby_name'], game_type = message['game_type'], max_players = message['max_players'], lobby_password = message['lobby_password'])
+                    for player in message['players']:
+                        new_lobby.add_player(player)
                     print("Moving to lobby menu")
                     #TODO: implement lobby menu
                     # move the client to the lobby menu, passing in the lobby object
