@@ -14,6 +14,9 @@ class Lobby:
         self.lobby_password = lobby_password
         self.players = []
         self.groups = []
+        
+    def get_id(self):
+        return self.lobby_id
 
     def get_name(self):
         return self.lobby_name

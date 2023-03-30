@@ -79,12 +79,12 @@ def run(screen, client_socket, username):
     while not done:
         hovered_game = -1
         for event in pygame.event.get():
-            if event.type == QUIT:
+            if event.type == QUIT or (event.type == KEYDOWN and event.key == K_ESCAPE):
                 done = True
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 x, y = event.pos
                 if create_lobby_rect.collidepoint(x, y):
-                    create_lobby_msg = messages.CreateLobbyMessage(owner=username, game_type=games[selected_game], lobby_name=game_name, lobby_password=password, max_players=int(max_players))
+                    create_lobby_msg = messages.CreateLobbyRequestMessage(owner=username, game_type=games[selected_game], lobby_name=game_name, lobby_password=password, max_players=int(max_players))
                     client_sock_utils.send_message(client_socket, create_lobby_msg)
                 elif not menu_open and SCREEN_WIDTH // 2 - 100 <= x <= SCREEN_WIDTH // 2 + 100 and 70 <= y <= 100:
                     menu_open = True

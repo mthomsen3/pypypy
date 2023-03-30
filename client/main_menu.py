@@ -47,7 +47,7 @@ def run(screen, client_socket, username):
     logged_in_users = []
     input_text = ""
     game_lobbies = []
-
+    lobby_rects = []
     x,y = 0, 0
 
     create_lobby_rect = pygame.Rect(50, 30, 120, 30)  # x = 260
@@ -61,6 +61,9 @@ def run(screen, client_socket, username):
 
     request_message_history = messages.RequestMessageHistoryMessage()
     client_sock_utils.send_message(client_socket, request_message_history)
+    
+    request_lobby_list = messages.RequestLobbyListMessage()
+    client_sock_utils.send_message(client_socket, request_lobby_list)
 
 
 
@@ -70,14 +73,25 @@ def run(screen, client_socket, username):
     while not done:
         x, y = pygame.mouse.get_pos()
         create_lobby_hovered = create_lobby_rect.collidepoint(x, y)
+        
+
 
         for event in pygame.event.get():
             if event.type == QUIT:
                 done = True
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 x, y = event.pos
+                clicked_lobby_index = None
+                for i, lobby_rect in enumerate(lobby_rects):
+                    if lobby_rect.collidepoint(x, y):
+                        clicked_lobby_index = i
+                        break
+                if clicked_lobby_index is not None:
+                    join_request_msg = messages.JoinLobbyMessage(lobby_id=game_lobbies[clicked_lobby_index]['id'], username=username, lobby_password=None)
+                    client_sock_utils.send_message(client_socket, join_request_msg)
+                    print("Joining lobby...")
                 if create_lobby_rect.collidepoint(x, y):
-                    create_lobby_req_msg = messages.CreateLobbyRequestMessage(owner=username)
+                    create_lobby_req_msg = messages.CreateLobbyMenuRequestMessage(owner=username)
                     client_sock_utils.send_message(client_socket, create_lobby_req_msg)
             elif event.type == KEYDOWN:
                 if event.key == K_ESCAPE:
@@ -94,7 +108,6 @@ def run(screen, client_socket, username):
                     input_text += event.unicode
                 # Handle other keyboard events here
 
-
         bg_color = (64, 64, 64)
         screen.fill(bg_color)
 
@@ -108,15 +121,13 @@ def run(screen, client_socket, username):
         # Draw game rooms list
         game_room_title = font.render("Game Rooms", True, (255, 255, 255))
         screen.blit(game_room_title, (20, 380))
-        for i, room_name in enumerate(game_lobbies):
-            room_text = font.render(f"{room_name}", True, (255, 255, 255))
-            screen.blit(room_text, (20, 410 + i * 30))
-        
+        #display_games_list(screen, [lobby["name"] for lobby in game_lobbies], font, (255, 255, 255), 20, 410)
+        lobby_rects = display_games_list(screen, [lobby['name'] for lobby in game_lobbies], font, (255, 255, 255), 20, 410)
+
         # Draw the "Create Lobby" button
         create_lobby_hovered = create_lobby_rect.collidepoint(x, y)
         draw_button(screen, font, "Create Lobby", create_lobby_rect.x, create_lobby_rect.y, create_lobby_rect.width, create_lobby_rect.height, create_lobby_color, create_lobby_hover_color, create_lobby_hovered)
 
-                
         # Check for incoming messages
         while not client_sock_utils.q.empty():
             message = client_sock_utils.q.get()
@@ -132,21 +143,21 @@ def run(screen, client_socket, username):
                 chat_messages = [f"{msg[0]}: {msg[1]}" for msg in message['messages']]
             elif isinstance(message, dict) and message.get('type') == 'REQUEST_USER_LIST':
                 logged_in_users = message['usernames']
+            elif isinstance(message, dict) and message.get('type') == 'REQUEST_LOBBY_LIST':
+                game_lobbies = [{"name": lobby_name, "id": index} for index, lobby_name in enumerate(message['lobbies'])]
             elif isinstance(message, dict) and message.get('type') == 'LOBBY_FAILED':
                 print(f"Received lobby failed message: {message['error_message']}")
                 #TODO: display error message on screen
-            elif isinstance(message, dict) and message.get('type') == 'CREATE_LOBBY_REQUEST_ACCEPTED':
+            elif isinstance(message, dict) and message.get('type') == 'CREATE_LOBBY_MENU_REQUEST_ACCEPTED':
                 print("Received lobby created message")
                 if message['owner'] == username:
                     # move the client to the lobby menu
                     print("Moving to lobby menu")
                     #TODO: implement lobby menu
                     create_lobby_menu.run(screen, client_socket, username)
-    
 
         # Draw chat messages
         display_chat(screen, chat_messages, font, (255, 255, 255), int(screen.get_width() * 0.55), 50, max_messages=25, max_width=int(screen.get_width() * 0.4), max_height=500)
-
 
         # Draw input box and current input text
         input_box = pygame.Rect(int(screen.get_width() * 0.55), 550, int(screen.get_width() * 0.4), 40)
@@ -154,11 +165,20 @@ def run(screen, client_socket, username):
         input_text_surface = font.render(input_text, True, (255, 255, 255))
         screen.blit(input_text_surface, (input_box.x + 5, input_box.y + 5))
 
-
         pygame.display.flip()
         clock.tick(60)
         pygame.display.update()
+        
+def display_games_list(screen, games_list, font, color, x, y, max_games=10):
+    lobby_rects = []
+    
+    for i, game in enumerate(games_list[-max_games:]):
+        text = font.render(game, True, color)
+        screen.blit(text, (x, y + i * 20))
+        lobby_rect = text.get_rect(topleft=(x, y + i * 20))
+        lobby_rects.append(lobby_rect)
 
+    return lobby_rects
 
 def display_chat(screen, chat_messages, font, color, x, y, max_messages=25, max_width=None, max_height=None):
     line_count = 0
@@ -183,11 +203,9 @@ def display_chat(screen, chat_messages, font, color, x, y, max_messages=25, max_
         message_count += 1
 
 
-def display_games_list(screen, games_list, font, color, x, y, max_games=10):
 
-    for i, game in enumerate(games_list[-max_games:]):
-        text = font.render(game, True, color)
-        screen.blit(text, (x, y + i * 20))
+
+
 
 def wrap_text(text, font, max_width):
     words = text.split(' ')

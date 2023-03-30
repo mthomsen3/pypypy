@@ -37,7 +37,7 @@ def process_file(file_path):
         'functions': functions,
         'imports': imports,
         'globals': globals,
-        'docstrings': docstrings  # Add this line to include docstrings in the result
+        #'docstrings': docstrings  # Add this line to include docstrings in the result
     }
 
 def process_directory(root_dir):
@@ -61,7 +61,7 @@ def process_directory(root_dir):
                 project_summary['classes'].update(file_summary['classes'])
                 project_summary['functions'].update(file_summary['functions'])
                 project_summary['globals'].update(file_summary['globals'])
-                project_summary['docstrings'].update(file_summary['docstrings'])
+                #project_summary['docstrings'].update(file_summary['docstrings'])
 
     return project_summary
 
@@ -77,9 +77,9 @@ def main():
         print(f"    Functions: {', '.join(file_summary['functions'])}")
         print(f"    Imports: {', '.join(file_summary['imports'])}")
         print(f"    Globals: {', '.join(file_summary['globals'])}")
-        print(f"    Docstrings:")  # Add this line to print the docstrings
-        for name, docstring in file_summary['docstrings'].items():
-            print(f"      {name}: {docstring}")
+        #print(f"    Docstrings:")  # Add this line to print the docstrings
+        #for name, docstring in file_summary['docstrings'].items():
+        #    print(f"      {name}: {docstring}")
 
     print('\nOverall Summary:')
     print(f"Classes: {', '.join(sorted(project_summary['classes']))}")

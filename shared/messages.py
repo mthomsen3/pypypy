@@ -72,19 +72,26 @@ class RequestMessageHistoryMessage:
         self.type = "REQUEST_MESSAGE_HISTORY"
         self.messages = messages if messages else []
 
-class CreateLobbyRequestMessage:
+# Can be sent by client or server
+# Sent as request (empty) and response to request
+class RequestLobbyListMessage:
+    def __init__(self, lobbies=None):
+        self.type = "REQUEST_LOBBY_LIST"
+        self.lobbies = lobbies if lobbies else []
+
+class CreateLobbyMenuRequestMessage:
     def __init__(self, owner):
-        self.type = "CREATE_LOBBY_REQUEST"
+        self.type = "CREATE_LOBBY_MENU_REQUEST"
         self.owner = owner
 
-class CreateLobbyRequestAcceptedMessage:
+class CreateLobbyMenuRequestAcceptedMessage:
     def __init__(self, owner):
-        self.type = "CREATE_LOBBY_REQUEST_ACCEPTED"
+        self.type = "CREATE_LOBBY_MENU_REQUEST_ACCEPTED"
         self.owner = owner
 
 # lobby_id is created by the server
-# CreateLongMessage is sent by the client to create a lobby
-class CreateLobbyMessage:
+# CreateLobbyMessage is sent by the client to create a lobby
+class CreateLobbyRequestMessage:
     def __init__(self, owner, lobby_name, game_type, max_players, lobby_password=None):
         self.type = "CREATE_LOBBY"
         self.owner = owner
@@ -92,7 +99,6 @@ class CreateLobbyMessage:
         self.game_type = game_type
         self.max_players = max_players
         self.lobby_password = lobby_password
-
 
 class LobbyFailedMessage:
     def __init__(self, error_message):
@@ -119,6 +125,13 @@ class JoinLobbyMessage:
         self.username = username
         self.lobby_password = lobby_password
 
+class JoinLobbyResponseMessage:
+    def __init__(self, lobby, status, username):
+        self.type = "JOIN_LOBBY_RESPONSE"
+        self.lobby = lobby
+        self.status = status
+        self.username = username
+
 class LeaveLobbyMessage:
     def __init__(self, lobby_id, username):
         self.type = "LEAVE_LOBBY"
@@ -137,15 +150,16 @@ class LobbyUpdateMessage:
         self.max_players = max_players
         self.lobby_password = lobby_password
 
+class LobbyClosedMessage:
+    def __init__(self, owner, lobby_id):
+        self.type = "LOBBY_CLOSED"
+        self.owner = owner
+        self.lobby_id = lobby_id
 
-class RequestLobbyListMessage:
-    def __init__(self):
-        self.type = "REQUEST_LOBBY_LIST"
 
-class LobbyListMessage:
-    def __init__(self, lobbies):
-        self.type = "LOBBY_LIST"
-        self.lobbies = lobbies
+
+
+
 
 class StartGameMessage:
     def __init__(self, lobby_id):
