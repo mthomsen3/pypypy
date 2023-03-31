@@ -23,6 +23,9 @@ class Lobby:
     
     def get_owner(self):
         return self.owner
+    
+    def get_lobby_password(self):
+        return self.lobby_password
 
     def add_player(self, player):
         if player not in self.players:
@@ -91,3 +94,25 @@ class Lobby:
         players = list(self.players)
         random.shuffle(players)
         return [players[i:i + n] for i in range(0, len(players), n)]
+
+
+    def to_dict(self):
+        return {
+            'lobby_id': self.lobby_id,
+            'owner': self.owner,
+            'lobby_name': self.lobby_name,
+            'game_type': self.game_type,
+            'max_players': self.max_players,
+            'lobby_password': self.lobby_password,
+        }
+
+    @classmethod
+    def from_dict(cls, data):
+        return cls(
+            lobby_id=data['lobby_id'],
+            owner=data['owner'],
+            lobby_name=data['lobby_name'],
+            game_type=data['game_type'],
+            max_players=data['max_players'],
+            lobby_password=data['lobby_password'],
+        )

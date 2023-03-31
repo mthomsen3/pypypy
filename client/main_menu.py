@@ -62,10 +62,9 @@ def run(screen, client_socket, username):
     request_message_history = messages.RequestMessageHistoryMessage()
     client_sock_utils.send_message(client_socket, request_message_history)
     
-    request_lobby_list = messages.RequestLobbyListMessage()
-    client_sock_utils.send_message(client_socket, request_lobby_list)
-
-
+    lobby_list_msg = messages.RequestLobbyListMessage()
+    client_sock_utils.send_message(client_socket, lobby_list_msg)
+    print("Sent RequestLobbyListMessage to server")
 
     font = pygame.font.SysFont(None, 24)
 
@@ -87,9 +86,9 @@ def run(screen, client_socket, username):
                         clicked_lobby_index = i
                         break
                 if clicked_lobby_index is not None:
-                    join_request_msg = messages.JoinLobbyMessage(lobby_id=game_lobbies[clicked_lobby_index]['id'], username=username, lobby_password=None)
+                    join_request_msg = messages.JoinLobbyMessage(lobby_id=game_lobbies[clicked_lobby_index]['lobby_id'], username=username, lobby_password=None)
                     client_sock_utils.send_message(client_socket, join_request_msg)
-                    print("Joining lobby...")
+                    print(f"Joining lobby {game_lobbies[clicked_lobby_index]['lobby_id']}...")
                 if create_lobby_rect.collidepoint(x, y):
                     create_lobby_req_msg = messages.CreateLobbyMenuRequestMessage(owner=username)
                     client_sock_utils.send_message(client_socket, create_lobby_req_msg)
@@ -122,7 +121,7 @@ def run(screen, client_socket, username):
         game_room_title = font.render("Game Rooms", True, (255, 255, 255))
         screen.blit(game_room_title, (20, 380))
         #display_games_list(screen, [lobby["name"] for lobby in game_lobbies], font, (255, 255, 255), 20, 410)
-        lobby_rects = display_games_list(screen, [lobby['name'] for lobby in game_lobbies], font, (255, 255, 255), 20, 410)
+        lobby_rects = display_games_list(screen, [lobby['lobby_name'] for lobby in game_lobbies], font, (255, 255, 255), 20, 410)
 
         # Draw the "Create Lobby" button
         create_lobby_hovered = create_lobby_rect.collidepoint(x, y)
@@ -131,6 +130,7 @@ def run(screen, client_socket, username):
         # Check for incoming messages
         while not client_sock_utils.q.empty():
             message = client_sock_utils.q.get()
+            #print(f"Processing message: {message}")  # Add this line
             if isinstance(message, dict) and message.get('type') == 'CHAT_MESSAGE':
                 chat_messages.append(f"{message['username']}: {message['message']}")
             elif isinstance(message, dict) and message.get('type') == 'USER_LIST_UPDATE': 
@@ -143,8 +143,9 @@ def run(screen, client_socket, username):
                 chat_messages = [f"{msg[0]}: {msg[1]}" for msg in message['messages']]
             elif isinstance(message, dict) and message.get('type') == 'REQUEST_USER_LIST':
                 logged_in_users = message['usernames']
-            elif isinstance(message, dict) and message.get('type') == 'REQUEST_LOBBY_LIST':
-                game_lobbies = [{"name": lobby_name, "id": index} for index, lobby_name in enumerate(message['lobbies'])]
+            elif isinstance(message, dict) and message.get('type') == 'LOBBY_LIST_UPDATE':
+                game_lobbies = message['lobbies']
+                print(f"Received lobby list: {game_lobbies}")
             elif isinstance(message, dict) and message.get('type') == 'LOBBY_FAILED':
                 print(f"Received lobby failed message: {message['error_message']}")
                 #TODO: display error message on screen

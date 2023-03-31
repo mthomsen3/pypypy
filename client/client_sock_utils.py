@@ -58,6 +58,7 @@ def bgThread(sock):
 
             # Put the message_dict into the queue
             q.put(message_dict)
+            print(f"Adding message to queue: {message_dict}")
 
         except Exception as e:
             print(f"Error in bgThread: {e}")

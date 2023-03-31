@@ -48,6 +48,7 @@ def send_message(sock, msg):
         message = header + serialized_msg.encode('utf-8')
 
         # Send the message to the server
+        print(f"Sending message to {sock.getpeername()}: {message}")  # Add this line
         sock.sendall(message)
 
     except (ConnectionResetError, BrokenPipeError, TimeoutError) as e:

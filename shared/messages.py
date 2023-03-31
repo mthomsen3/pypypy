@@ -7,6 +7,8 @@ RequestUserListMessage, and RequestMessageHistoryMessage.
 """
 # Define message classes for different message types
 
+import shared.lobby as Lobby
+
 class HelloMessage:
     def __init__(self, message):
         self.type = "HELLO"
@@ -78,6 +80,16 @@ class RequestLobbyListMessage:
     def __init__(self, lobbies=None):
         self.type = "REQUEST_LOBBY_LIST"
         self.lobbies = lobbies if lobbies else []
+        
+class LobbyListUpdateMessage:
+    def __init__(self, lobbies=None):
+        self.type = "LOBBY_LIST_UPDATE"
+        self.lobbies = lobbies if lobbies else []
+
+
+
+
+
 
 class CreateLobbyMenuRequestMessage:
     def __init__(self, owner):
@@ -126,11 +138,18 @@ class JoinLobbyMessage:
         self.lobby_password = lobby_password
 
 class JoinLobbyResponseMessage:
-    def __init__(self, lobby, status, username):
+    def __init__(self, lobby_id, status, username, players):
         self.type = "JOIN_LOBBY_RESPONSE"
-        self.lobby = lobby
+        self.lobby_id = lobby_id
         self.status = status
         self.username = username
+        self.players = players
+
+class LobbyNotFoundMessage:
+    def __init__(self, error_message):
+        self.type = "LOBBY_NOT_FOUND"
+        self.error_message = error_message
+
 
 class LeaveLobbyMessage:
     def __init__(self, lobby_id, username):
