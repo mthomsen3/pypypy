@@ -38,6 +38,21 @@ class Lobby:
     
     def get_groups(self):
         return self.groups
+    
+    def set_name(self, lobby_name):
+        self.lobby_name = lobby_name
+        
+    def set_game_type(self, game_type):
+        self.game_type = game_type
+        
+    def set_max_players(self, max_players):
+        self.max_players = max_players
+        
+    def set_lobby_password(self, lobby_password):
+        self.lobby_password = lobby_password
+        
+    
+    
 
     def add_player(self, player):
         if player not in self.players:
@@ -116,6 +131,8 @@ class Lobby:
             'game_type': self.game_type,
             'max_players': self.max_players,
             'lobby_password': self.lobby_password,
+            'players': self.players,
+            'groups': self.groups,
         }
 
     @classmethod
@@ -127,4 +144,6 @@ class Lobby:
             game_type=data['game_type'],
             max_players=data['max_players'],
             lobby_password=data['lobby_password'],
+            players=data['players'],
+            groups=data['groups'],
         )

@@ -36,13 +36,7 @@ def draw_button(screen, font, text, x, y, width, height, color, hover_color, is_
 
 
 def run(screen, client_socket, username):
-    """
-    run: Main loop of the chat application's user interface.
-    Parameters: screen (pygame.Surface) - The main display surface; client_socket (socket.socket) - The client communication socket; username (str) - The user's username.
-    Returns: None
-    Side Effects: Draws UI components, handles user input, sends and receives chat messages, updates user list, and updates message history.
-    Dependencies: pygame, messages, client_sock_utils
-    """
+
     clock = pygame.time.Clock()
     pygame.display.set_caption('Main Menu')
     chat_messages = []
@@ -75,8 +69,6 @@ def run(screen, client_socket, username):
         x, y = pygame.mouse.get_pos()
         create_lobby_hovered = create_lobby_rect.collidepoint(x, y)
         
-
-
         for event in pygame.event.get():
             if event.type == QUIT:
                 done = True
@@ -94,6 +86,7 @@ def run(screen, client_socket, username):
                 if create_lobby_rect.collidepoint(x, y):
                     create_lobby_req_msg = messages.CreateLobbyMenuRequestMessage(owner=username)
                     client_sock_utils.send_message(client_socket, create_lobby_req_msg)
+                    print(f"Requesting to create lobby for... {create_lobby_req_msg.owner}")
             elif event.type == KEYDOWN:
                 if event.key == K_ESCAPE:
                     disconnect_message = messages.DisconnectMessage(username)
@@ -115,9 +108,10 @@ def run(screen, client_socket, username):
         # Draw user list
         user_list_title = font.render("Logged-in Users", True, (255, 255, 255))
         screen.blit(user_list_title, (20, 100))
-        for i, username in enumerate(logged_in_users):
-            user_text = font.render(f"{username}", True, (255, 255, 255))
+        for i, user in enumerate(logged_in_users):
+            user_text = font.render(f"{user}", True, (255, 255, 255))
             screen.blit(user_text, (20, 130 + i * 30))
+
 
         # Draw game rooms list
         game_room_title = font.render("Game Rooms", True, (255, 255, 255))

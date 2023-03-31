@@ -46,7 +46,7 @@ def draw_confirmation_popup(screen, font, yes_rect, no_rect, yes_hovered, no_hov
 
 
 
-def run(screen, client_socket, username, new_lobby):
+def run(screen, client_socket, username, current_lobby):
     clock = pygame.time.Clock()
     font = pygame.font.SysFont(None, 24)
     input_font = pygame.font.SysFont(None, 20)
@@ -55,11 +55,11 @@ def run(screen, client_socket, username, new_lobby):
     game_type_input = pygame.Rect(140, 60, 200, 30)
     max_players_input = pygame.Rect(140, 100, 200, 30)
 
-    lobby_name = new_lobby.lobby_name
-    game_type = new_lobby.game_type
-    max_players = str(new_lobby.max_players)
+    lobby_name = current_lobby.lobby_name
+    game_type = current_lobby.game_type
+    max_players = str(current_lobby.max_players)
 
-    edit_fields = (username == new_lobby.owner)
+    edit_fields = (username == current_lobby.owner)
 
     done = False
     active_input = None
@@ -69,7 +69,7 @@ def run(screen, client_socket, username, new_lobby):
         # Get mouse position
         x, y = pygame.mouse.get_pos()
         
-        display_lobby_info(screen, font, new_lobby)
+        display_lobby_info(screen, font, current_lobby)
 
         for event in pygame.event.get():
             if event.type == QUIT or (event.type == KEYDOWN and event.key == K_ESCAPE):
@@ -85,7 +85,7 @@ def run(screen, client_socket, username, new_lobby):
                     active_input = None
             if event.type == KEYDOWN and active_input is not None:
                 if event.key == K_RETURN:
-                    update_msg = messages.LobbyUpdateMessage(lobby_id=new_lobby.lobby_id, lobby_name=lobby_name, game_type=game_type, max_players=int(max_players))
+                    update_msg = messages.LobbyUpdateMessage(lobby_id=current_lobby.lobby_id, lobby_name=lobby_name, game_type=game_type, max_players=int(max_players), owner=current_lobby.owner, players=current_lobby.players, groups=current_lobby.groups)
                     client_sock_utils.send_message(client_socket, update_msg)
                     active_input = None
                 elif event.key == K_BACKSPACE:
@@ -129,14 +129,13 @@ def run(screen, client_socket, username, new_lobby):
         # Check for incoming messages
         while not client_sock_utils.q.empty():
             message = client_sock_utils.q.get()
-            if isinstance(message, dict) and message.get('type') == 'LOBBY_UPDATE' and message.get('lobby_id') == new_lobby.lobby_id:
-                new_lobby.owner = message.get('owner')
-                new_lobby.players = message.get('players')
-                new_lobby.groups = message.get('groups')
-                new_lobby.lobby_name = message.get('lobby_name')
-                new_lobby.game_type = message.get('game_type')
-                new_lobby.max_players = message.get('max_players')
-                new_lobby.lobby_password = message.get('lobby_password')
+            if isinstance(message, dict) and message.get('type') == 'LOBBY_UPDATE' and message.get('lobby_id') == current_lobby.lobby_id:
+                current_lobby.players = message.get('players')
+                current_lobby.groups = message.get('groups')
+                current_lobby.lobby_name = message.get('lobby_name')
+                current_lobby.game_type = message.get('game_type')
+                current_lobby.max_players = message.get('max_players')
+                current_lobby.lobby_password = message.get('lobby_password')
             else:
                 continue
 
@@ -158,13 +157,13 @@ def run(screen, client_socket, username, new_lobby):
                 for popup_event in pygame.event.get():
                     if popup_event.type == MOUSEBUTTONDOWN:
                         if yes_rect.collidepoint(popup_event.pos):
-                            if username == new_lobby.owner:
+                            if username == current_lobby.owner:
                                 # Send message to close the lobby
-                                close_msg = messages.LobbyClosedMessage(owner=username, lobby_id=new_lobby.lobby_id)
+                                close_msg = messages.LobbyClosedMessage(owner=username, lobby_id=current_lobby.lobby_id)
                                 client_sock_utils.send_message(client_socket, close_msg)
                             else:
                                 # Send message to remove the player from the lobby
-                                leave_msg = messages.LeaveLobbyMessage(lobby_id=new_lobby.lobby_id, username=username)
+                                leave_msg = messages.LeaveLobbyMessage(lobby_id=current_lobby.lobby_id, username=username)
                                 client_sock_utils.send_message(client_socket, leave_msg)
 
                             done = True

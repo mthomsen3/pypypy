@@ -384,16 +384,8 @@ def client_handler(sock, username):
 
 
         elif message_dict['type'] == 'CREATE_LOBBY_MENU_REQUEST':
-            # check to see if lobby name is taken
-            # check to see if owner already has a lobby
-            # check to see if lobby name is valid
-            # check to see if lobby password is valid
-            # check to see if lobby max players is valid
-            # send LobbyFailedMessage if any of the above are not valid
-            # create LobbyCreatedMessage
-            # send LobbyCreatedMessage to owner
             owner = message_dict['owner']
-            if owner in [lobby.get_owner() for lobby in lobbydicts]:
+            if owner in [lobby.get_owner() for lobby in lobbies]:
                 lobby_failed_msg = messages.LobbyFailedMessage(
                     error_message="You already have a lobby."
                 )
@@ -480,6 +472,39 @@ def client_handler(sock, username):
                     
                 logging.info(f"Created lobby {lobby_name} with owner {owner}.")
 
+        elif message_dict['type'] == 'LOBBY_UPDATE':
+            lobby_id = message_dict['lobby_id']
+            owner = message_dict['owner']
+            lobby_name = message_dict['lobby_name']
+            game_type = message_dict['game_type']
+            max_players = message_dict['max_players']
+            lobby_password = message_dict['lobby_password']
+            groups = message_dict['groups']
+            players = message_dict['players']
+            for lobby in lobbies:
+                if lobby.get_owner() == owner and lobby.get_id() == lobby_id:
+                    lobby.set_name(lobby_name)
+                    lobby.set_game_type(game_type)
+                    lobby.set_max_players(max_players)
+                    lobby.set_lobby_password(lobby_password)
+                    # TODO: implement group changes
+                    # Player changes should be handled by joining/leaving lobby messages
+                else:
+                    continue
+            for lobby in lobbydicts:
+                if lobby['owner'] == owner and lobby['lobby_id'] == lobby_id:
+                    lobby['lobby_name'] = lobby_name
+                    lobby['game_type'] = game_type
+                    lobby['max_players'] = max_players
+                    lobby['lobby_password'] = lobby_password
+                    # TODO: implement group changes
+                    # Player changes should be handled by joining/leaving lobby messages
+                else:
+                    continue
+            lobby_list_msg = messages.LobbyListUpdateMessage(lobbies=lobbydicts)
+            for _, other_client in clients.items():
+                server_sock_utils.send_message(other_client['sock'], lobby_list_msg)
+
 
         elif message_dict['type'] == 'LOBBY_CLOSED':
             owner = message_dict['owner']
@@ -490,7 +515,7 @@ def client_handler(sock, username):
                 else:
                     continue
             for lobby in lobbydicts:
-                if lobby.owner == owner and lobby.lobby_id == lobby_id:
+                if lobby['owner'] == owner and lobby['lobby_id'] == lobby_id:
                     lobbydicts.remove(lobby)
                     lobby_list_msg = messages.LobbyListUpdateMessage(lobbies=lobbydicts)
                     for _, other_client in clients.items():
@@ -504,31 +529,25 @@ def client_handler(sock, username):
             lobby_password = message_dict['lobby_password']
             joined_lobby = False  # Add a flag to check if the user has joined a lobby
             
-            print(f"Received JOIN_LOBBY message for lobby_id: {lobby_id}, username: {username}")  # Debug line
-
+            print(f"Received JOIN_LOBBY message for lobby_id: {lobby_id}, username: {username}")  # DEBUGGER
 
             for lobby in lobbies:
-                print(f"Checking lobby_id: {lobby.get_id()}")
+                #print(f"Checking lobby_id: {lobby.get_id()}") # DEBUGGER
                 if lobby.get_id() == lobby_id:
                     if lobby.get_lobby_password() == lobby_password:
                         lobby.add_player(username)
-                        lobby_list_msg = messages.LobbyListUpdateMessage(lobbydicts)
                         join_lobby_response_msg = messages.JoinLobbyResponseMessage(
                             status="success",
                             lobby_id=lobby_id,
                             owner=lobby.get_owner(),
                             lobby_name=lobby.get_name(),
-                            game_type=lobby.# Defining a function called get_game_type.
-                            # Defining a function called get_game_type.
-                            get_game_type(),
+                            game_type=lobby.get_game_type(),
                             max_players=lobby.get_max_players(),
                             lobby_password=lobby.get_lobby_password(),
                             groups=lobby.get_groups(),
                             players=lobby.get_players()
                         )
-                        for _, other_client in clients.items():
-                            server_sock_utils.send_message(other_client['sock'], lobby_list_msg)
-                            server_sock_utils.send_message(other_client['sock'], join_lobby_response_msg)
+                        server_sock_utils.send_message(sock, join_lobby_response_msg)
                         joined_lobby = True  # Update the flag
                         break
                     else:
@@ -544,6 +563,16 @@ def client_handler(sock, username):
                 )
                 server_sock_utils.send_message(sock, lobby_not_found_msg)
 
+        elif message_dict['type'] == 'LEAVE_LOBBY':
+            lobby_id = message_dict['lobby_id']
+            username = message_dict['username']
+            for lobby in lobbies:
+                if lobby.get_id() == lobby_id:
+                    lobby.remove_player(username)
+                    lobby_list_msg = messages.LobbyListUpdateMessage(lobbies=lobbydicts)
+                    for _, other_client in clients.items():
+                        server_sock_utils.send_message(other_client['sock'], lobby_list_msg)
+                    break
 
 
         elif message_dict['type'] == 'DISCONNECT':
