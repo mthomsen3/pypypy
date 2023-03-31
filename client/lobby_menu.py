@@ -1,6 +1,7 @@
 
 import pygame
 import client_sock_utils
+from pong_client import run_pong_game
 from pygame.locals import *
 import sys
 sys.path.append('../')
@@ -17,7 +18,7 @@ HOVERED_MENU_COLOR = (220, 220, 220)
 ACTIVE_INPUT_COLOR = (180, 180, 255)
 
 # move to utils
-games = ["Pong", "Chess", "Poker", "Checkers"]
+games = ["Pong", "Chess", "Poker", "Checkers", "Tic-tac-toe"]
 
 def draw_button(screen, font, text, x, y, width, height, color, hover_color, is_hovered):
     if is_hovered:
@@ -119,11 +120,17 @@ def run(screen, client_socket, username, current_lobby):
             if event.type == QUIT or (event.type == KEYDOWN and event.key == K_ESCAPE):
                 show_confirmation_popup = True
             if event.type == MOUSEBUTTONDOWN and edit_fields:
-                if not menu_open and SCREEN_WIDTH // 2 - 100 <= x <= SCREEN_WIDTH // 2 + 100 and 70 <= y <= 100:
+                if start_game_rect.collidepoint(x, y):
+                    start_game_msg = messages.StartGameMessage(lobby_id=current_lobby.lobby_id)
+                    client_sock_utils.send_message(client_socket, start_game_msg)
+                    print("Starting game... (sending message to server)")
+                elif not menu_open and SCREEN_WIDTH // 2 - 100 <= x <= SCREEN_WIDTH // 2 + 100 and 70 <= y <= 100:
                     menu_open = True
                 elif menu_open and SCREEN_WIDTH // 2 - 100 <= x <= SCREEN_WIDTH // 2 + 100 and 100 <= y <= 100 + 30 * len(games):
                     selected_game = (y - 100) // 30
                     game_type = games[selected_game]
+                    update_msg = messages.LobbyUpdateMessage(lobby_id=current_lobby.lobby_id, lobby_name=lobby_name, game_type=game_type, max_players=int(max_players), owner=current_lobby.owner, players=current_lobby.players, groups=current_lobby.groups, lobby_password=password)
+                    client_sock_utils.send_message(client_socket, update_msg)
                     menu_open = False
                 elif menu_open:
                     menu_open = False  
@@ -211,6 +218,10 @@ def run(screen, client_socket, username, current_lobby):
                 current_lobby.game_type = message.get('game_type')
                 current_lobby.max_players = message.get('max_players')
                 current_lobby.lobby_password = message.get('lobby_password')
+            elif isinstance(message, dict) and message.get('type') == 'GAME_STARTED' and message.get('session_id') == current_lobby.lobby_id:
+                game_type = message.get('game_type')
+                if game_type == 'Pong':
+                    run_pong_game(client_socket, screen, username)
             else:
                 continue
 

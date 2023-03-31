@@ -79,7 +79,7 @@ class Lobby:
         self.sort_players_into_groups()
 
     def sort_players_into_groups(self):
-        if self.game_type in ["Chess", "Checkers", "Battleship"]:
+        if self.game_type in ["Chess", "Checkers", "Battleship","Tic-tac-toe"]:
             self.groups = self.pair_players_and_spectators()
         elif self.game_type == "Pong":
             self.groups = self.create_two_teams()

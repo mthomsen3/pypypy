@@ -16,7 +16,7 @@ MENU_COLOR = (240, 240, 240)
 SELECTED_MENU_COLOR = (180, 180, 180)
 HOVERED_MENU_COLOR = (220, 220, 220)
 
-games = ["Pong", "Chess", "Poker", "Checkers"]
+games = ["Pong", "Chess", "Poker", "Checkers", "Tic-tac-toe"]
 
 
 def draw_button(screen, font, text, x, y, width, height, color, hover_color, is_hovered):
@@ -87,7 +87,6 @@ def run(screen, client_socket, username):
             if event.type == QUIT or (event.type == KEYDOWN and event.key == K_ESCAPE):
                 done = True
             elif event.type == pygame.MOUSEBUTTONDOWN:
-                x, y = event.pos
                 if create_lobby_rect.collidepoint(x, y):
                     create_lobby_msg = messages.CreateLobbyRequestMessage(owner=username, game_type=games[selected_game], lobby_name=game_name, lobby_password=password, max_players=int(max_players))
                     client_sock_utils.send_message(client_socket, create_lobby_msg)

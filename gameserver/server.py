@@ -23,7 +23,9 @@ import bcrypt
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from itsdangerous import URLSafeTimedSerializer
-from game_session import GameSession
+from game import Game
+from pong import Pong
+from tictactoe import TicTacToe
 
 import sys
 sys.path.append('../')
@@ -47,6 +49,7 @@ registered_users = []
 total = totalsuccess = 0
 lobbydicts = []
 lobbies = []
+game_sessions = []
 
 # Dictionary of client sockets and their associated data
 '''
@@ -399,14 +402,6 @@ def client_handler(sock, username):
 
 
         elif message_dict['type'] == 'CREATE_LOBBY':
-            # check to see if lobby name is taken
-            # check to see if owner already has a lobby
-            # check to see if lobby name is valid
-            # check to see if lobby password is valid
-            # check to see if lobby max players is valid
-            # send LobbyFailedMessage if any of the above are not valid
-            # create LobbyCreatedMessage
-            # send LobbyCreatedMessage to owner
             owner = message_dict['owner']
             lobby_name = message_dict['lobby_name']
             lobby_password = message_dict['lobby_password']
@@ -436,9 +431,6 @@ def client_handler(sock, username):
                 # lobby_id = None, will be set during object class initialization
                 gamelobby = Lobby(lobby_id = None, owner=owner, lobby_name=lobby_name, game_type=game_type, max_players=max_players, lobby_password=lobby_password)
                 gamelobby.add_player(owner)
-                # TODO
-                # add lobby to NEW list of Lobby objects
-                # lobbies is currently a dictionary of Lobby objects so that they are serialized properly when sent to clients
                 lobbydicts.append(gamelobby.to_dict())
                 lobbies.append(gamelobby)
                 lobby_list_msg = messages.LobbyListUpdateMessage(lobbies=lobbydicts)
@@ -459,17 +451,9 @@ def client_handler(sock, username):
                 server_sock_utils.send_message(sock, lobby_list_msg)
                 
                 for _, other_client in clients.items():
-                    # message to lobby owner
                     server_sock_utils.send_message(other_client['sock'], lobby_created_msg)
-                    # message to all other clients to update lobby list
-                    #print(f"Sending lobby_list_msg.to_dict(): {lobby_list_msg.to_dict()}")  # Add this line
                     server_sock_utils.send_message(other_client['sock'], lobby_list_msg)
-                    #lobby_list_msg = messages.LobbyListUpdateMessage(lobbies)
-                    #server_sock_utils.send_message(sock, lobby_list_msg)
-
-
-                    
-                    
+ 
                 logging.info(f"Created lobby {lobby_name} with owner {owner}.")
 
         elif message_dict['type'] == 'LOBBY_UPDATE':
@@ -504,7 +488,6 @@ def client_handler(sock, username):
             lobby_list_msg = messages.LobbyListUpdateMessage(lobbies=lobbydicts)
             for _, other_client in clients.items():
                 server_sock_utils.send_message(other_client['sock'], lobby_list_msg)
-
 
         elif message_dict['type'] == 'LOBBY_CLOSED':
             owner = message_dict['owner']
@@ -574,7 +557,6 @@ def client_handler(sock, username):
                         server_sock_utils.send_message(other_client['sock'], lobby_list_msg)
                     break
 
-
         elif message_dict['type'] == 'DISCONNECT':
             print("Client disconnected.")
             sock.close()
@@ -593,9 +575,93 @@ def client_handler(sock, username):
             broadcast_user_list()
             break
 
+        elif message_dict['type'] == 'START_GAME':
+            # get the lobby id
+            lobby_id = message_dict['lobby_id']
+            
+            # get the lobby object based on the id
+            lobby = None
+            for l in lobbies:
+                if l.get_id() == lobby_id:
+                    lobby = l
+                    break
+            
+            game_type = lobby.get_game_type()
+            if game_type == 'Pong':
+                game = Pong(session_id = lobby_id, players = lobby.get_players())
+            elif game_type == 'Tic-tac-toe':
+                game = TicTacToe(session_id = lobby_id, players = lobby.get_players())
+                
+                
+            game_thread = threading.Thread(target=game_session_thread, args=(game,))
+            game_thread.start()
+            # add game to list of active sessions
+            game_sessions.append(game)
+            # send a game started message to all clients in the lobby
+            game_started_msg = messages.GameStartedMessage(session_id = lobby_id, game_type = game_type, players = lobby.get_players(), game_state = game.state)
+            for _, other_client in clients.items():
+                if other_client['username'] in lobby.get_players():
+                    server_sock_utils.send_message(other_client['sock'], game_started_msg)
+                    
+            # remove the lobby from the list of lobbies
+            lobbies.remove(lobby)
+            for lobby in lobbydicts:
+                if lobby['lobby_id'] == lobby_id:
+                    lobbydicts.remove(lobby)
+            # send an updated lobby list to all clients
+            lobby_list_msg = messages.LobbyListUpdateMessage(lobbies=lobbydicts)
+            for _, other_client in clients.items():
+                server_sock_utils.send_message(other_client['sock'], lobby_list_msg)
+
+
+        elif message_dict['type'] == 'PLAYER_ACTION':
+            # Handle player actions, e.g., moving a paddle in Pong or making a move in TicTacToe
+            action = message_dict['action']
+            session_id = message_dict['session_id']
+            # Add the player action to the game session's action queue
+            for game in game_sessions:
+                if game.session_id == session_id:
+                    game.add_player_action(username, action)
+
 
 
         # Handle other messages from the client...
+        # TODO: game over and removing from game_session list
+
+
+
+def game_session_thread(game):
+    # Initialize the game state
+    game_state = game.initialize_game_state()
+
+    # Determine the sleep duration based on the game type
+    if isinstance(game, Pong):
+        sleep_duration = 0.1  # High communication rate for live-action games
+    elif isinstance(game, TicTacToe):
+        sleep_duration = 1.0  # Lower communication rate for turn-based games
+    else:
+        sleep_duration = 0.1  # Default to high communication rate
+
+    while not game.state['game_over']:
+        # Process any pending player actions
+        if not game.action_queue.empty():
+            player, action = game.get_next_action()
+            game.update(game_state, player, action)
+
+        # Send the game state to all players
+        game_state_message = messages.GameStateUpdateMessage(session_id=game.session_id, game_state=game_state)
+        for player in game.players:
+            player_socket = None
+            for client_socket, client_info in clients.items():
+                if client_info['username'] == player:
+                    player_socket = client_socket
+                    break
+            if player_socket:
+                server_sock_utils.send_message(player_socket, game_state_message)
+        
+        # Sleep for the specified duration
+        time.sleep(sleep_duration)
+
 
 
 

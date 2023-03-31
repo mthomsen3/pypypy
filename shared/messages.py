@@ -181,19 +181,19 @@ class LobbyClosedMessage:
         self.lobby_id = lobby_id
 
 
-
-
-
-
 class StartGameMessage:
     def __init__(self, lobby_id):
         self.type = "START_GAME"
         self.lobby_id = lobby_id
 
 class GameStartedMessage:
-    def __init__(self, session_id):
+    def __init__(self, session_id, players, game_type, game_state):
         self.type = "GAME_STARTED"
         self.session_id = session_id
+        self.players = players
+        self.game_type = game_type
+        self.game_state = game_state
+        
 
 class PlayerActionMessage:
     def __init__(self, session_id, action):

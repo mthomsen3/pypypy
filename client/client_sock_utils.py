@@ -53,12 +53,12 @@ def bgThread(sock):
                 break
             msg_length = int(header.strip())
             msg = sock.recv(msg_length).decode("utf-8")
-            print(f"Received message: {msg}")  # Add this line to print the received message
+            #print(f"Received message: {msg}")  # Add this line to print the received message
             message_dict = json.loads(msg) 
 
             # Put the message_dict into the queue
             q.put(message_dict)
-            print(f"Adding message to queue: {message_dict}")
+            #print(f"Adding message to queue: {message_dict}")
 
         except Exception as e:
             print(f"Error in bgThread: {e}")
