@@ -58,7 +58,8 @@ def draw_text_input(screen, font, text, x, y, width, height, label, color):
     input_rect = pygame.Rect(x, y, width, height)
     pygame.draw.rect(screen, color, input_rect, 2)
     label_surface = font.render(label, True, FONT_COLOR)
-    screen.blit(label_surface, (x - (width - label_surface.get_width()) // 2, y - 25))
+    screen.blit(label_surface, (x, y - 25))
+    #screen.blit(label_surface, (x - (width - label_surface.get_width()) // 2, y - 25))
     text_surface = font.render(text, True, FONT_COLOR)
     screen.blit(text_surface, (x + 5, y + 5))
 
@@ -66,6 +67,9 @@ def run(screen, client_socket, username):
     clock = pygame.time.Clock()
 
     font = pygame.font.SysFont(None, 24)
+    increase_button_rect = pygame.Rect(SCREEN_WIDTH // 2 + 110, 350, 30, 30)
+    decrease_button_rect = pygame.Rect(SCREEN_WIDTH // 2 - 140, 350, 30, 30)
+
 
     game_name = ""
     password = ""
@@ -78,6 +82,7 @@ def run(screen, client_socket, username):
     done = False
     while not done:
         hovered_game = -1
+        x, y = pygame.mouse.get_pos()   
         for event in pygame.event.get():
             if event.type == QUIT or (event.type == KEYDOWN and event.key == K_ESCAPE):
                 done = True
@@ -101,6 +106,10 @@ def run(screen, client_socket, username):
                     active_input = "max_players"
                 else:
                     active_input = None
+                if increase_button_rect.collidepoint(x, y):
+                    max_players = str(min(int(max_players) + 1, 20))
+                elif decrease_button_rect.collidepoint(x, y):
+                    max_players = str(max(1, int(max_players) - 1))
 
             elif event.type == KEYDOWN:
                 if active_input is not None:
@@ -123,16 +132,15 @@ def run(screen, client_socket, username):
 
         screen.fill(BG_COLOR)
 
+
         draw_text_input(screen, font, game_name, SCREEN_WIDTH // 2 - 100, 150, 200, 30, "Lobby Name:", BG_COLOR)
         draw_text_input(screen, font, password, SCREEN_WIDTH // 2 - 100, 250, 200, 30, "Password (optional):", BG_COLOR)
         draw_text_input(screen, font, max_players, SCREEN_WIDTH // 2 - 100, 350, 200, 30, "Max Players:", BG_COLOR)
 
-        x, y = pygame.mouse.get_pos()
         if menu_open and SCREEN_WIDTH // 2 - 100 <= x <= SCREEN_WIDTH // 2 + 100 and 100 <= y <= 100 + 30 * len(games):
             hovered_game = (y - 100) // 30
         else:
             hovered_game = -1
-
 
         create_lobby_rect = pygame.Rect(SCREEN_WIDTH // 2 - 60, 400, 120, 30)
         create_lobby_color = (96, 96, 96)
@@ -140,10 +148,14 @@ def run(screen, client_socket, username):
         create_lobby_hovered = create_lobby_rect.collidepoint(x, y)
         draw_button(screen, font, "Create Lobby", create_lobby_rect.x, create_lobby_rect.y, create_lobby_rect.width, create_lobby_rect.height, create_lobby_color, create_lobby_hover_color, create_lobby_hovered)
         
+        
+        draw_button(screen, font, "+", increase_button_rect.x, increase_button_rect.y, increase_button_rect.width, increase_button_rect.height, (96, 96, 96), (128, 128, 128), increase_button_rect.collidepoint(x, y))
+        draw_button(screen, font, "-", decrease_button_rect.x, decrease_button_rect.y, decrease_button_rect.width, decrease_button_rect.height, (96, 96, 96), (128, 128, 128), decrease_button_rect.collidepoint(x, y))
+
         # Draw input field borders
         pygame.draw.rect(screen, FONT_COLOR, (SCREEN_WIDTH // 2 - 100, 150, 200, 30), 2)
         pygame.draw.rect(screen, FONT_COLOR, (SCREEN_WIDTH // 2 - 100, 250, 200, 30), 2)
-        pygame.draw.rect(screen, FONT_COLOR, (SCREEN_WIDTH // 2 - 100, 350, 200, 30), 2)
+        #pygame.draw.rect(screen, FONT_COLOR, (SCREEN_WIDTH // 2 - 100, 350, 200, 30), 2)
 
         draw_menu(screen, font, menu_open, selected_game, hovered_game)
 
