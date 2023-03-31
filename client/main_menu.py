@@ -6,9 +6,11 @@ import pygame
 from pygame.locals import *
 import client_sock_utils
 import create_lobby_menu
+import lobby_menu
 import sys
 sys.path.append('../')
 import shared.messages as messages
+from shared.lobby import Lobby
 
 # Constants
 SCREEN_WIDTH = 640
@@ -86,7 +88,7 @@ def run(screen, client_socket, username):
                         clicked_lobby_index = i
                         break
                 if clicked_lobby_index is not None:
-                    join_request_msg = messages.JoinLobbyMessage(lobby_id=game_lobbies[clicked_lobby_index]['lobby_id'], username=username, lobby_password=None)
+                    join_request_msg = messages.JoinLobbyMessage(lobby_id=game_lobbies[clicked_lobby_index]['lobby_id'], username=username, lobby_password="")
                     client_sock_utils.send_message(client_socket, join_request_msg)
                     print(f"Joining lobby {game_lobbies[clicked_lobby_index]['lobby_id']}...")
                 if create_lobby_rect.collidepoint(x, y):
@@ -149,6 +151,16 @@ def run(screen, client_socket, username):
             elif isinstance(message, dict) and message.get('type') == 'LOBBY_FAILED':
                 print(f"Received lobby failed message: {message['error_message']}")
                 #TODO: display error message on screen
+            elif isinstance(message, dict) and message.get('type') == 'JOIN_LOBBY_RESPONSE':
+                new_lobby = Lobby(lobby_id = message['lobby_id'], owner = message['owner'], lobby_name = message['lobby_name'], game_type = message['game_type'], max_players = message['max_players'], lobby_password = message['lobby_password'])
+                for player in message['players']:
+                    new_lobby.add_player(player)
+                print("Moving to lobby menu")
+                #TODO: implement lobby menu
+                # move the client to the lobby menu, passing in the lobby object
+                lobby_menu.run(screen, client_socket, username, new_lobby)
+
+                
             elif isinstance(message, dict) and message.get('type') == 'CREATE_LOBBY_MENU_REQUEST_ACCEPTED':
                 print("Received lobby created message")
                 if message['owner'] == username:

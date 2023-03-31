@@ -45,6 +45,7 @@ end = False
 connections = []
 registered_users = []
 total = totalsuccess = 0
+lobbydicts = []
 lobbies = []
 
 # Dictionary of client sockets and their associated data
@@ -335,7 +336,7 @@ def send_authorization_email(email):
 def client_handler(sock, username):
 
     logging.info(f"Entered player function for username: {username}")  # Add this log message
-    global registered_users, lobbies
+    global registered_users, lobbydicts
     while True:
         # Get the message length from the header
         header = sock.recv(HEADER_SIZE)
@@ -378,12 +379,9 @@ def client_handler(sock, username):
         elif message_dict['type'] == 'REQUEST_LOBBY_LIST':
             print(f"Received RequestLobbyListMessage from {sock.getpeername()}") 
 
-            lobby_list_msg = messages.LobbyListUpdateMessage(lobbies=lobbies)
+            lobby_list_msg = messages.LobbyListUpdateMessage(lobbies=lobbydicts)
             server_sock_utils.send_message(sock, lobby_list_msg)
-            #print(f"Sent LobbyListUpdateMessage to {sock.getpeername()}")
-            #print(f"lobbies: {lobbies}")
-            #print(f"lobby_list_msg: {lobby_list_msg}")
-            #print(f"lobby_list_msg.to_dict(): {lobby_list_msg.to_dict()}")
+
 
         elif message_dict['type'] == 'CREATE_LOBBY_MENU_REQUEST':
             # check to see if lobby name is taken
@@ -395,7 +393,7 @@ def client_handler(sock, username):
             # create LobbyCreatedMessage
             # send LobbyCreatedMessage to owner
             owner = message_dict['owner']
-            if owner in [lobby.get_owner() for lobby in lobbies]:
+            if owner in [lobby.get_owner() for lobby in lobbydicts]:
                 lobby_failed_msg = messages.LobbyFailedMessage(
                     error_message="You already have a lobby."
                 )
@@ -422,12 +420,12 @@ def client_handler(sock, username):
             lobby_password = message_dict['lobby_password']
             max_players = message_dict['max_players']
             game_type = message_dict['game_type']
-            if owner in [lobby.get_owner() for lobby in lobbies]:
+            if owner in [lobby.get_owner() for lobby in lobbydicts]:
                 lobby_failed_msg = messages.LobbyFailedMessage(
                     error_message="You already have a lobby."
                 )
                 server_sock_utils.send_message(sock, lobby_failed_msg)
-            elif lobby_name in [lobby.get_name() for lobby in lobbies]:
+            elif lobby_name in [lobby.get_name() for lobby in lobbydicts]:
                 lobby_failed_msg = messages.LobbyFailedMessage(
                     error_message="Lobby name already taken."
                 )
@@ -446,11 +444,14 @@ def client_handler(sock, username):
                 # lobby_id = None, will be set during object class initialization
                 gamelobby = Lobby(lobby_id = None, owner=owner, lobby_name=lobby_name, game_type=game_type, max_players=max_players, lobby_password=lobby_password)
                 gamelobby.add_player(owner)
-                # sdlfk;jas;ldkfjaljkdfgskdjfg
-                lobbies.append(gamelobby.to_dict())
-                lobby_list_msg = messages.LobbyListUpdateMessage(lobbies=lobbies)
-                print(f"lobbies: {lobbies}")
-                print(f"lobby_list_msg: {lobby_list_msg}")
+                # TODO
+                # add lobby to NEW list of Lobby objects
+                # lobbies is currently a dictionary of Lobby objects so that they are serialized properly when sent to clients
+                lobbydicts.append(gamelobby.to_dict())
+                lobbies.append(gamelobby)
+                lobby_list_msg = messages.LobbyListUpdateMessage(lobbies=lobbydicts)
+                #print(f"lobbies: {lobbydicts}")
+                #print(f"lobby_list_msg: {lobby_list_msg}")
 
                 lobby_created_msg = messages.LobbyCreatedMessage(
                     lobby_id=gamelobby.lobby_id,
@@ -486,10 +487,14 @@ def client_handler(sock, username):
             for lobby in lobbies:
                 if lobby.get_owner() == owner and lobby.get_id() == lobby_id:
                     lobbies.remove(lobby)
-                    lobby_list_msg = messages.LobbyListUpdateMessage(lobbies=lobbies)
+                else:
+                    continue
+            for lobby in lobbydicts:
+                if lobby.owner == owner and lobby.lobby_id == lobby_id:
+                    lobbydicts.remove(lobby)
+                    lobby_list_msg = messages.LobbyListUpdateMessage(lobbies=lobbydicts)
                     for _, other_client in clients.items():
                         server_sock_utils.send_message(other_client['sock'], lobby_list_msg)
-                    break
                 else:
                     continue
                 
@@ -507,15 +512,22 @@ def client_handler(sock, username):
                 if lobby.get_id() == lobby_id:
                     if lobby.get_lobby_password() == lobby_password:
                         lobby.add_player(username)
-                        lobby_list_msg = messages.LobbyListUpdateMessage(lobbies)
+                        lobby_list_msg = messages.LobbyListUpdateMessage(lobbydicts)
                         join_lobby_response_msg = messages.JoinLobbyResponseMessage(
-                            lobby_id=lobby_id,
                             status="success",
-                            username=username,
-                            players=lobby.players
+                            lobby_id=lobby_id,
+                            owner=lobby.get_owner(),
+                            lobby_name=lobby.get_name(),
+                            game_type=lobby.# Defining a function called get_game_type.
+                            # Defining a function called get_game_type.
+                            get_game_type(),
+                            max_players=lobby.get_max_players(),
+                            lobby_password=lobby.get_lobby_password(),
+                            groups=lobby.get_groups(),
+                            players=lobby.get_players()
                         )
                         for _, other_client in clients.items():
-                            server_sock_utils.send_message(other_client['sock'], lobby_list_msg.to_dict())
+                            server_sock_utils.send_message(other_client['sock'], lobby_list_msg)
                             server_sock_utils.send_message(other_client['sock'], join_lobby_response_msg)
                         joined_lobby = True  # Update the flag
                         break

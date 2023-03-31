@@ -104,7 +104,7 @@ class CreateLobbyMenuRequestAcceptedMessage:
 # lobby_id is created by the server
 # CreateLobbyMessage is sent by the client to create a lobby
 class CreateLobbyRequestMessage:
-    def __init__(self, owner, lobby_name, game_type, max_players, lobby_password=None):
+    def __init__(self, owner, lobby_name, game_type, max_players, lobby_password=""):
         self.type = "CREATE_LOBBY"
         self.owner = owner
         self.lobby_name = lobby_name
@@ -119,7 +119,7 @@ class LobbyFailedMessage:
 
 # LobbyCreatedMessage is sent by the server to the client
 class LobbyCreatedMessage:
-    def __init__(self, lobby_id, owner, players, groups, lobby_name, game_type, max_players, lobby_password=None):
+    def __init__(self, lobby_id, owner, players, groups, lobby_name, game_type, max_players, lobby_password=""):
         self.type = "LOBBY_CREATED"
         self.lobby_id = lobby_id
         self.players = players
@@ -138,12 +138,17 @@ class JoinLobbyMessage:
         self.lobby_password = lobby_password
 
 class JoinLobbyResponseMessage:
-    def __init__(self, lobby_id, status, username, players):
+    def __init__(self, status, lobby_id, players, groups, owner, lobby_name, game_type, max_players, lobby_password=""):
         self.type = "JOIN_LOBBY_RESPONSE"
-        self.lobby_id = lobby_id
         self.status = status
-        self.username = username
+        self.lobby_id = lobby_id
         self.players = players
+        self.groups = groups
+        self.owner = owner
+        self.lobby_name = lobby_name
+        self.game_type = game_type
+        self.max_players = max_players
+        self.lobby_password = lobby_password
 
 class LobbyNotFoundMessage:
     def __init__(self, error_message):
@@ -158,7 +163,7 @@ class LeaveLobbyMessage:
         self.username = username
 
 class LobbyUpdateMessage:
-    def __init__(self, lobby_id, players, groups, owner, lobby_name, game_type, max_players, lobby_password=None):
+    def __init__(self, lobby_id, players, groups, owner, lobby_name, game_type, max_players, lobby_password=""):
         self.type = "LOBBY_UPDATE"
         self.lobby_id = lobby_id
         self.players = players

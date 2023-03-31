@@ -2,7 +2,7 @@ import uuid
 import random
 
 class Lobby:
-    def __init__(self, lobby_id, owner, lobby_name, game_type, max_players, lobby_password=None):
+    def __init__(self, lobby_id, owner, lobby_name, game_type, max_players, lobby_password=""):
         if lobby_id is not None:
             self.lobby_id = lobby_id
         else:
@@ -24,8 +24,20 @@ class Lobby:
     def get_owner(self):
         return self.owner
     
+    def get_game_type(self):
+        return self.game_type
+    
+    def get_max_players(self):
+        return self.max_players
+    
     def get_lobby_password(self):
         return self.lobby_password
+    
+    def get_players(self):
+        return self.players
+    
+    def get_groups(self):
+        return self.groups
 
     def add_player(self, player):
         if player not in self.players:
