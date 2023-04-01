@@ -11,9 +11,13 @@ class Pong(Game):
     def start(self):
         pass  # Implement Pong game start logic
 
+
     def update(self, player_actions):
         # Update paddle positions based on player actions
-        for player_index, (player, action) in enumerate(player_actions.items()):
+        for player, action in player_actions.items():
+            player_index = self.players.index(player)  # Find the index of the player in the self.players list
+            if action is None:
+                continue  # No action for this player, skip to the next player
             if action == "up":
                 print("UP!")
                 self.state[f'paddle{player_index + 1}_y'] -= 0.02

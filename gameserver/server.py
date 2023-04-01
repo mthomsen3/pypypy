@@ -643,10 +643,10 @@ def game_session_thread(game):
         sleep_duration = 0.1  # Default to high communication rate
 
     while not game.state['game_over']:
-        player_actions = {}
+        player_actions = {}  # Initialize a dictionary to store actions for all players
         while not game.action_queue.empty():
             player, action = game.get_next_action()
-            player_actions[player] = action
+            player_actions[player] = action  # Store the action for the corresponding player
         game.update(player_actions)
         # Send the game state to all players
         game_state_message = messages.GameStateUpdateMessage(session_id=game.session_id, game_state=game.state)
