@@ -196,9 +196,10 @@ class GameStartedMessage:
         
 
 class PlayerActionMessage:
-    def __init__(self, session_id, action):
+    def __init__(self, session_id, username, action):
         self.type = "PLAYER_ACTION"
         self.session_id = session_id
+        self.username = username
         self.action = action
 
 class GameStateUpdateMessage:

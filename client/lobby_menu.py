@@ -220,8 +220,9 @@ def run(screen, client_socket, username, current_lobby):
                 current_lobby.lobby_password = message.get('lobby_password')
             elif isinstance(message, dict) and message.get('type') == 'GAME_STARTED' and message.get('session_id') == current_lobby.lobby_id:
                 game_type = message.get('game_type')
+                session_id = message.get('session_id')
                 if game_type == 'Pong':
-                    run_pong_game(client_socket, screen, username)
+                    run_pong_game(client_socket, screen, session_id, username)
             else:
                 continue
 

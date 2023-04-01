@@ -643,13 +643,13 @@ def game_session_thread(game):
         sleep_duration = 0.1  # Default to high communication rate
 
     while not game.state['game_over']:
-        # Process any pending player actions
-        if not game.action_queue.empty():
+        player_actions = {}
+        while not game.action_queue.empty():
             player, action = game.get_next_action()
-            game.update(game_state, player, action)
-
+            player_actions[player] = action
+        game.update(player_actions)
         # Send the game state to all players
-        game_state_message = messages.GameStateUpdateMessage(session_id=game.session_id, game_state=game_state)
+        game_state_message = messages.GameStateUpdateMessage(session_id=game.session_id, game_state=game.state)
         for player in game.players:
             player_socket = None
             for client_socket, client_info in clients.items():
