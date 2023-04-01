@@ -595,6 +595,7 @@ def client_handler(sock, username):
                 
             game_thread = threading.Thread(target=game_session_thread, args=(game,))
             game_thread.start()
+            time.sleep(0.1)
             # add game to list of active sessions
             game_sessions.append(game)
             # send a game started message to all clients in the lobby
@@ -636,7 +637,7 @@ def game_session_thread(game):
 
     # Determine the sleep duration based on the game type
     if isinstance(game, Pong):
-        sleep_duration = 0.1  # High communication rate for live-action games
+        sleep_duration = 0.03  # High communication rate for live-action games
     elif isinstance(game, TicTacToe):
         sleep_duration = 1.0  # Lower communication rate for turn-based games
     else:
