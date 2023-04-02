@@ -639,7 +639,7 @@ def game_session_thread(game):
     if isinstance(game, Pong):
         sleep_duration = 0.03  # High communication rate for live-action games
     elif isinstance(game, TicTacToe):
-        sleep_duration = 1.0  # Lower communication rate for turn-based games
+        sleep_duration = 0.3  # Lower communication rate for turn-based games
     else:
         sleep_duration = 0.1  # Default to high communication rate
 

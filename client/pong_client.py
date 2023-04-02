@@ -43,8 +43,6 @@ def draw_game(screen, game_state):
 
     pygame.display.flip()
 
-
-    
 def draw_scores(screen, game_state):
     # Set the font and size
     font_size = 36

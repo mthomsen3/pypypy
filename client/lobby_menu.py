@@ -2,6 +2,7 @@
 import pygame
 import client_sock_utils
 from pong_client import run_pong_game
+from tictactoe_client import run_tictactoe_game
 from pygame.locals import *
 import sys
 sys.path.append('../')
@@ -223,6 +224,8 @@ def run(screen, client_socket, username, current_lobby):
                 session_id = message.get('session_id')
                 if game_type == 'Pong':
                     run_pong_game(client_socket, screen, session_id, username)
+                if game_type == 'Tic-tac-toe':
+                    run_tictactoe_game(client_socket, screen, session_id, username)
             else:
                 continue
 
